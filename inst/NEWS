@@ -1,0 +1,21 @@
+            
+                RELEASE HISTORY OF metaRNASeq PACKAGE
+             ========================================
+
+		CHANGES in metaRNASeq VERSION 0.1
+
+This is the first development version (12 December 2012)
+
+    CHANGES in metaRNASeq VERSION 0.2
+    
+Treatment of missing values (8 January 2013)    
+
+    CHANGES in metaRNASeq VERSION 0.3
+    
+Vignette and additional functions to extract simulated data (29 July 2013)   
+Better compression of param.rda file 
+
+    CHANGES in metaRNASeq VERSION 0.4
+
+Modifications in vignette (26 February 2014)
+

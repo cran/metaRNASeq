@@ -1,0 +1,320 @@
+%\VignetteIndexEntry{metaRNASeq Vignette}
+%\VignetteKeyword{RNA-seq data}
+%\VignetteKeyword{differential analysis}
+%\VignettePackage{metaRNASeq}
+\documentclass[12pt,utf8x]{article}
+
+\SweaveOpts{eps=FALSE,echo=TRUE,png=TRUE,pdf=FALSE,figs.only=TRUE}
+\usepackage{times}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=TRUE,urlcolor=blue,citecolor=blue]{hyperref}
+\usepackage{subfigure}
+\usepackage{amsmath}
+
+\newcommand{\Rfunction}[1]{{\texttt{#1}}}
+\newcommand{\Robject}[1]{{\texttt{#1}}}
+\newcommand{\Rpackage}[1]{{\textit{#1}}}
+\newcommand{\Rmethod}[1]{{\texttt{#1}}}
+\newcommand{\Rfunarg}[1]{{\texttt{#1}}}
+\newcommand{\Rclass}[1]{{\textit{#1}}}
+\newcommand{\Rcode}[1]{{\texttt{#1}}}
+\newcommand{\software}[1]{\textsf{#1}}
+\newcommand{\R}{\software{R}}
+\newcommand{\metaRNASeq}{\Rpackage{metaRNASeq}}
+
+
+\textwidth=6.2in
+\textheight=8.5in
+\oddsidemargin=0.2in
+\evensidemargin=0.2in
+\headheight=0in
+\headsep=0in
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Potential things to add:
+%% IDD, IDR, Venn diagram?
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\title{metaRNASeq: Differential meta-analysis of \\ RNA-seq data
+}
+\author{Guillemette Marot, Florence Jaffr{\'e}zic, Andrea Rau}
+\date{Modified: February 26, 2013.   Compiled: \today}
+\maketitle
+
+<<echo=FALSE>>=
+options(width=60)
+@ 
+
+\begin{abstract}
+This vignette illustrates the use of the \Rpackage{metaRNASeq} package to combine data from multiple RNA-seq experiments. Based both on simulated and real publicly available data, it also explains the way the $p$-value data provided in the package have been obtained.
+\end{abstract}
+
+\tableofcontents
+
+%--------------------------------------------------
+\section{Introduction} \label{sec:intro}
+%--------------------------------------------------
+ 
+High-throughput sequencing (HTS) data, such as RNA-sequencing (RNA-seq) data, are increasingly used to conduct differential analyses, in which gene-by-gene statistical tests are performed in order to identify genes whose expression levels show systematic covariation with a particular condition, such as a treatment or phenotype of interest. Due to their large cost, however, only few biological replicates are often considered in each experiment leading to a low detection power of differentially expressed genes. For this reason, analyzing data arising from several experiments studying the same question can be a useful way to increase detection power for the identification of differentially expressed genes.
+
+The \Rpackage{metaRNASeq} package implements two $p$-value combination techniques (inverse normal and Fisher methods); see \cite{Rau2013} for additional details. There are two fundamental assumptions behind the use of these $p$-value combination procedures: first, that $p$-values have been obtained the same way for each experiment (i.e., using the same model and test); and second, that they follow a uniform distribution under the null hypothesis. In this vignette, we illustrate these $p$-value combination techniques after obtaining $p$-values for differential expression in each individual experiment using the \Rpackage{DESeq2} Bioconductor package \cite{Anders2010}. Count data are simulated using the \Rfunction{sim.function} provided in the \Rpackage{metaRNASeq} package; see section \ref{sec:sim} for additional detail.  
+ 
+%--------------------------------------------------
+\section{Simulation study} \label{sec:sim}
+%--------------------------------------------------
+ 
+To begin, we load the necessary packages and simulation parameters:
+ 
+<<loadparameters>>=  
+library(metaRNASeq)
+library(DESeq2)
+data(param)
+dim(param)
+data(dispFuncs)
+@
+
+These simulation parameters include the following information:
+\begin{itemize}
+\item \Robject{param}: Matrix of dimension (26408 $\times$ 3) containing mean expression in each of two conditions (here, labeled ``condition 1" and ``condition 2") and a logical vector indicating the presence or absence of differential expression for each of 26,408 genes
+\item \Robject{dispFuncs}: List of length 2, where each list is a vector containing the two estimated coefficients ($\alpha_0$ and $\alpha_1$) for the gamma-family generalized linear model (GLM) fit by \Rpackage{DESeq} (version 1.8.3) describing the mean-dispersion relationship for each of the two real datasets considered in \cite{Rau2013}. These regressions represent the typical relationship between mean expression values $\mu$ and dispersions $\alpha$ in each dataset, where the coefficients $\alpha_0$ and $\alpha_1$ are found to parameterize the fit as $\alpha = \alpha_0 + \alpha_1 / \mu$.
+\end{itemize}
+
+These parameters were calculated on real data sets from two human melanoma cell lines \cite{Strub2011}, corresponding to two different studies performed for the same cell line comparison, with two biological replicates per cell line in the first and three per cell line in the second. These data are presented in greater detail in \cite{Strub2011} and \cite{Statomique2012}, and are freely available in the Supplementary Materials of the latter. 
+
+Once parameters are loaded, we simulate data. We use the \Rfunction{set.seed} function to obtain reproducible results.
+ 
+<<simulateData>>= 
+set.seed(123)
+matsim <- sim.function(param = param, dispFuncs = dispFuncs)
+sim.conds <- colnames(matsim)
+rownames(matsim) <- paste("tag", 1:dim(matsim)[1],sep="")
+dim(matsim)
+@
+
+The simulated matrix data contains $26,408$ genes and $4$ replicates per condition per study. It is possible to change the number of replicates in each study using either the \Rcode{nrep} argument or the \Rcode{classes} argument. Using \Rcode{nrep} simulates the same number of replicates per condition per study. In order to simulate an unbalanced design, the \Rcode{classes} argument may be used. For example, setting 
+\begin{center}
+\Rcode{classes = list(c(1,2,1,1,2,1,1,2),c(1,1,1,2,2,2,2))}
+\end{center} 
+leads to 5 and 3 replicates in each condition for the first study, and 3 and 4 replicates  in each condition in the second. 
+
+%--------------------------------------------------
+\section{Individual analyses of the two simulated data sets} \label{sec:DEindivstudies}
+%--------------------------------------------------
+
+Before performing a combination of $p$-values from each study, it is necessary to perform a differential analysis of the individual studies (using the same method). In the following example, we make use of the \Rpackage{DESeq2} package to obtain $p$-values for differential analyses of each study independently; however, we note that other differential analysis methods (e.g., \Rpackage{edgeR} or \Rpackage{baySeq}) could be used prior to the meta analysis. 
+
+\subsection{Differential analysis of each individual study with DESeq2}
+
+Inputs to DEseq2 methods can be extracted with \Rcode{extractfromsim} for each individual study whose name appears in the column names of \Rcode{matsim}, see the following example for study1 and study2. 
+
+<<extractindivstudy>>=  
+colnames(matsim)
+simstudy1 <- extractfromsim(matsim,"study1")
+head(simstudy1$study)
+simstudy1$pheno
+simstudy2 <- extractfromsim(matsim,"study2")
+@
+
+Differential analyses for each study are then easily performed using the \Rcode{DESeqDataSetFromMatrix} method.
+
+<<DESeq2.indivanalysis>>=
+dds1 <- DESeqDataSetFromMatrix(countData = simstudy1$study,
+ colData = simstudy1$pheno,design = ~ condition)
+res1 <- results(DESeq(dds1))
+dds2 <- DESeqDataSetFromMatrix(countData = simstudy2$study, 
+  colData = simstudy2$pheno,design = ~ condition)
+res2 <- results(DESeq(dds2))
+@
+
+We recommand to store both p-value and Fold Change results in lists in order to perform meta-analysis and keep track of the potential conflicts (see section \ref{sec:check})
+<<storepvalandFC>>=
+rawpval <- list("pval1"=res1[["pvalue"]],"pval2"=res2[["pvalue"]])
+FC <- list("FC1"=res1[["log2FoldChange"]],"FC2"=res2[["log2FoldChange"]]) 
+@
+
+Differentially expressed genes in each individual study can also be marked in a matrix \Rcode{DE}:
+<<storeadjpval>>=
+adjpval <- list("adjpval1"=res1[["padj"]],"adjpval2"=res2[["padj"]])
+DE <- mapply(adjpval, FUN=function(x) ifelse(x <= 0.05, 1, 0))
+colnames(DE)=c("DEstudy1","DEstudy2")
+@
+
+Since the proposed p-value combination techniques rely on the assumption that p-values follow a uniform distribution under the null hypothesis, it is necesary to check that the histograms of raw-pvalues reflect that assumption: 
+
+<<pvalDESeq2hist, fig=TRUE, include=FALSE, width = 10, height = 6>>=
+par(mfrow = c(1,2))
+hist(rawpval[[1]], breaks=100, col="grey", main="Study 1", xlab="Raw p-values")
+hist(rawpval[[2]], breaks=100, col="grey", main="Study 2", xlab="Raw p-values")
+@
+
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width = .85\textwidth]{metaRNASeq-pvalDESeq2hist.png}
+\caption{Histograms of raw $p$-values for each of the individual differential analyses performed using the \Rpackage{DESeq2} package.\label{fig:pvalDESeq2hist}}
+\end{center}
+\end{figure}
+  
+The peak near 0 corresponds to differentially expressed genes, no other peak should appear. If another peak appears (for example like in this example where a peak is observed for p-values close to 1), then we suggest to use HTSFilter (see the following section).
+
+\subsection{Using HTSFilter to validate the p-value uniform distribution assumption}
+
+Genes with very low values of expression often lead to an enrichment of $p$-values close to 1 as they take on discrete values; as such genes are unlikely to display evidence for differential expression, it has been proposed to apply {\it independent filtering} to filter these genes \cite{HTSFilter}. In addition, the application of such a filter typically removes those genes contributing to a peak of $p$-values close to 1, leading to a distribution of $p$-values under the null hypothesis more closely following a uniform distribution. As the proposed $p$-value combination techniques rely on this assumption, it is sometimes necessary to independently filter genes with very low read counts. For this purpose, we recommand the use of the \Rpackage{HTSFilter} package, see \cite{HTSFilter} for more details; note that we apply the filter in \Rpackage{HTSFilter} to each study individually after estimating library sizes and per-gene dispersion parameters. 
+
+Once the data are filtered, we use the \Rpackage{DESeq} package to perform differential analyses of each of the two individual datasets. The following function \Rfunction{resDESeq1study} is a wrapper of the main functions of the data filter in \Rpackage{HTSFilter} and differential analysis in \Rpackage{DESeq}, selecting the appropriate columns in the simulated data set for each study. The following two steps could be replaced by direct uses of the \Rpackage{HTSFilter} and \Rpackage{DESeq} packages and concatenation of results in one list (see \Rcode{resDESeq.alt}).
+
+%change with DESeq2
+
+<<DESeq1study>>= 
+library(DESeq)
+library(HTSFilter)
+resDESeq1study <- function(studyname, alldata, cond1totest="cond1",
+    cond2totest="cond2", fitType = "parametric") {
+  study <- alldata[,grep(studyname,colnames(alldata))]
+  studyconds <- gsub(studyname,"",colnames(study))
+  colnames(study) <- paste(studyconds,1:dim(study)[2],sep=".")
+  cds <- newCountDataSet(study, studyconds)
+  cds <- estimateSizeFactors(cds)
+  cds <- estimateDispersions(cds, method="pooled", fitType=fitType)
+  ## Filter using Jaccard index for each study
+  filter <- HTSFilter(cds, plot=FALSE)
+  cds.filter <- filter$filteredData
+  on.index <- which(filter$on == 1)
+  cat("# genes passing filter", studyname, ":", dim(cds.filter)[1], "\n")
+  res <- as.data.frame(matrix(NA, nrow = nrow(cds), ncol=ncol(cds)))
+  nbT <- nbinomTest(cds.filter, cond1totest, cond2totest)
+  colnames(res) <- colnames(nbT)
+  res[on.index,] <- nbT
+  res
+}
+@
+
+The wrapper can be applied simultaneously to the two studies with the use of the function \Rfunction{lapply}:
+
+<<DESeq2studies>>= 
+studies <- c("study1", "study2")
+resDESeq <- lapply(studies, 
+  FUN=function(x) resDESeq1study(x, alldata=matsim))
+@
+
+Note that \Rcode{resDESeq} can be created directly from two or more \Rpackage{DEseq} results called \Rcode{res.study1}, \Rcode{res.study2}, \dots :
+
+\begin{center}
+\Rcode{resDESeq.alt <- list(res.study1,res.study2)}
+\end{center}
+
+Since only $p$-values are necessary to perform meta-analysis, we keep them in lists called \Rcode{rawpval} for raw $p$-values and \Rcode{adjpval} for $p$-values adjusted to correct for multiple testing (e.g., to control the false discovery rate at 5\% using the Benjamini-Hochberg method).
+ 
+<<pvalDE>>= 
+rawpval <- lapply(resDESeq, FUN=function(res) res$pval)
+adjpval <- lapply(resDESeq, FUN=function(res) res$padj)
+DE <- mapply(adjpval, FUN=function(x) ifelse(x <= 0.05, 1, 0))
+colnames(DE)=paste("DE",studies,sep=".")
+@
+
+\Rcode{DE} returns a matrix with 1 for genes identified as differentially expressed and 0 otherwise (one column per study). To confirm that the raw $p$-values under the null hypothesis are roughly uniformly distributed, we may also inspect histograms of the raw $p$-values from each of the individual differential analyses (see Figure~\ref{fig:pvalDEhist}):
+
+<<pvalDEhist, fig=TRUE, include=FALSE, width = 10, height = 6>>=
+par(mfrow = c(1,2))
+hist(rawpval[[1]], breaks=100, col="grey", main="Study 1", 
+  xlab="Raw p-values")
+hist(rawpval[[2]], breaks=100, col="grey", main="Study 2", 
+  xlab="Raw p-values")
+@
+
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width = .85\textwidth]{metaRNASeq-pvalDEhist.png}
+\caption{Histograms of raw $p$-values for each of the individual differential analyses performed using the \Rpackage{HTSFilter} and \Rpackage{DESeq} packages.\label{fig:pvalDEhist}}
+\end{center}
+\end{figure}
+
+%--------------------------------------------------
+\section{Use of $p$-value combination techniques} \label{sec:pvalcombi}
+%--------------------------------------------------
+
+The code in this section may be used independently from the previous section if $p$-values from each study have been obtained using the same differential analysis test between the different studies. Vectors of $p$-values must have the same length; \Rcode{rawpval} is a list (or data.frame) containing the vectors of raw $p$-values obtained from the individual differential analyses of each study. 
+
+The $p$-value combination using the Fisher method may be performed with the \Rcode{fishercomb} function, and the subsequent $p$-values obtained from the meta-analysis may be examined (Figure~\ref{fig:pvalcomb}, left):
+
+<<pvalfishcomb, fig=TRUE, include=FALSE>>= 
+fishcomb <- fishercomb(rawpval, BHth = 0.05)
+hist(fishcomb$rawpval, breaks=100, col="grey", main="Fisher method",
+  xlab = "Raw p-values (meta-analysis)")
+@
+
+\begin{figure}[t!]
+\begin{center}
+\includegraphics[width = .45\textwidth]{metaRNASeq-pvalfishcomb.png}
+\includegraphics[width = .45\textwidth]{metaRNASeq-pvalinvnorm.png}
+\caption{(Left) Histogram of raw $p$-values obtained after a meta-analysis of all studies, with $p$-value combination performed using the Fisher method. (Right) Histogram of raw $p$-values obtained after a meta-analysis of all studies, with $p$-value combination performed using the inverse normal method.\label{fig:pvalcomb}}
+\end{center}
+\end{figure}
+
+The use of the inverse normal combination technique requires the choice of a weight for each study. In this example, we choose \Rcode{nrep=8}, since 8 replicates had been simulated in each study. As before, we may examine a histogram of the subsequent $p$-values obtained from the meta-analysis (Figure~\ref{fig:pvalcomb}, right).
+
+<<pvalinvnorm, fig=TRUE, include=FALSE>>= 
+invnormcomb <- invnorm(rawpval,nrep=c(8,8), BHth = 0.05)   
+hist(invnormcomb$rawpval, breaks=100, col="grey", 
+  main="Inverse normal method",
+  xlab = "Raw p-values (meta-analysis)")    
+@
+
+Finally, we suggest summarizing the results of the individual differential analyses as well as the differential meta-analysis (using the Fisher and inverse normal methods) in a data.frame:
+<<tabDE>>= 
+DEresults <- data.frame(DE, 
+  "DE.fishercomb"=ifelse(fishcomb$adjpval<=0.05,1,0),
+  "DE.invnorm"=ifelse(invnormcomb$adjpval<=0.05,1,0))
+head(DEresults)
+@
+
+%--------------------------------------------------
+\section{Treatment of conflicts in differential expression} \label{sec:check}
+%--------------------------------------------------
+
+As pointed out in \cite{Rau2013}, it is not possible to directly avoid conflicts between over- and under- expressed genes in separate studies that appear in differential meta-analyses of RNA-seq data. We thus advise checking that individual studies identify differential expression in the same direction (i.e., if in one study, a gene is identified as differentially over-expressed in condition 1 as compared to condition 2, it should not be identified as under-expressed in condition 1 as compared to condition 2 in a second study). Genes displaying contradictory differential expression in separate studies should be removed from the list of genes identified as differentially expressed via meta-analysis. 
+
+We build a matrix \Rcode{signsFC} gathering all signs of fold changes from individual studies.
+
+<<checkDESeq2>>= 
+signsFC <- mapply(FC, FUN=function(x) sign(x))
+sumsigns <- apply(signsFC,1,sum) 
+commonsgnFC <- ifelse(abs(sumsigns)==dim(signsFC)[2], sign(sumsigns),0)  
+@
+
+The vector \Rcode{commonsgnFC} will return a value of 1 if the gene has a positive $\log_2$ fold change in all studies, -1 if the gene has a negative $\log_2$ fold change in all studies, and 0 if contradictory $\log_2$ fold changes are observed across studies (i.e., positive in one and negative in the other). By examining the elements of \Rcode{commonsgnFC}, it is thus possible to identify genes displaying contradictory differential expression among studies.
+
+<<filterconflicts>>=
+unionDE <- unique(c(fishcomb$DEindices,invnormcomb$DEindices))
+FC.selecDE <- data.frame(DEresults[unionDE,],do.call(cbind,FC)[unionDE,],
+  signFC=commonsgnFC[unionDE], DE=param$DE[unionDE])
+keepDE <- FC.selecDE[which(abs(FC.selecDE$signFC)==1),]
+conflictDE <- FC.selecDE[which(FC.selecDE$signFC == 0),]
+dim(FC.selecDE)
+dim(keepDE)
+dim(conflictDE)
+head(keepDE)
+@
+
+Note that out of all the conflicts, 147 represented genes were simulated to be truly differentially expressed. 
+
+<<filtercheck>>=
+table(conflictDE$DE)
+@
+
+% faut il rajouter IDD, IDR, venn diagram?
+
+%--------------------------------------------------
+\section{Session Info}
+%--------------------------------------------------
+<<sessionInfo>>=
+sessionInfo()
+@ 
+
+\bibliographystyle{abbrv}  			% Style BST file
+\bibliography{metaRNASeq}    	% Bibliography file (usually '*.bib' ) 
+
+\end{document}

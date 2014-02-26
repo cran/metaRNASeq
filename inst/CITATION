@@ -1,0 +1,12 @@
+citHeader("To cite the R package 'metaRNASeq' in publications use:")  
+
+citEntry(entry   = "Article",
+         title   = "Differential meta-analysis of RNA-seq data",
+         year    = "2013",
+	 journal = "arXiv",
+         author  = personList(
+           person(first="Andrea", last="Rau"),
+           person(first="Guillemette", last="Marot"),
+           person(first="Florence", last="Jaffrezic")),
+         textVersion = "A. Rau, G. Marot and F. Jaffrezic (2013). Differential meta-analysis of RNA-seq data from multiple studies. arXiv:1306.3636")
+
