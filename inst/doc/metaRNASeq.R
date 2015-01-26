@@ -1,7 +1,7 @@
 ### R code from vignette source 'metaRNASeq.Rnw'
 
 ###################################################
-### code chunk number 1: metaRNASeq.Rnw:48-49
+### code chunk number 1: metaRNASeq.Rnw:42-43
 ###################################################
 options(width=60)
 
@@ -172,13 +172,54 @@ head(keepDE)
 
 
 ###################################################
-### code chunk number 18: filtercheck
+### code chunk number 18: filtercheckcache
+###################################################
+nbtrueconflicts=as.vector(table(conflictDE$DE)[2])
+
+
+###################################################
+### code chunk number 19: filtercheck
 ###################################################
 table(conflictDE$DE)
 
 
 ###################################################
-### code chunk number 19: sessionInfo
+### code chunk number 20: calcul
+###################################################
+fishcomb_de <- rownames(keepDE)[which(keepDE[,"DE.fishercomb"]==1)] 
+invnorm_de <- rownames(keepDE)[which(keepDE[,"DE.invnorm"]==1)] 
+indstudy_de <- list(rownames(keepDE)[which(keepDE[,"DE.study1"]==1)], 
+                    rownames(keepDE)[which(keepDE[,"DE.study2"]==1)])
+
+IDD.IRR(fishcomb_de,indstudy_de)
+IDD.IRR(invnorm_de ,indstudy_de)
+
+
+###################################################
+### code chunk number 21: calcul2
+###################################################
+x=IDD.IRR(fishcomb_de,indstudy_de)
+y=IDD.IRR(invnorm_de ,indstudy_de)
+
+
+###################################################
+### code chunk number 22: venndiagram
+###################################################
+library(VennDiagram)
+venn.plot<-venn.diagram(x = list(study1=which(keepDE[,"DE.study1"]==1),
+                                 study2=which(keepDE[,"DE.study2"]==1),
+                                 fisher=which(keepDE[,"DE.fishercomb"]==1),
+                                 invnorm=which(keepDE[,"DE.invnorm"]==1)),
+                        filename = NULL, col = "black",
+                        fill = c("blue", "red", "purple","green"),
+                        margin=0.05, alpha = 0.6)
+jpeg("venn_jpeg.jpg");
+grid.draw(venn.plot);
+dev.off();
+
+
+###################################################
+### code chunk number 23: sessionInfo
 ###################################################
 sessionInfo()
 

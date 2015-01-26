@@ -6,14 +6,14 @@
 Meta-analysis for RNA-seq data.
 }
 \description{
-This package implements two p-value combination techniques (inverse normal and Fisher methods). It also provides a vignette explaining how to perform a meta-analysis from two independent RNA-seq experiments.
+Implementation of two p-value combination techniques (inverse normal and Fisher methods). A vignette is provided to explain how to perform a meta-analysis from two independent RNA-seq experiments.
 }
 \details{
 \tabular{ll}{
 Package: \tab metaRNASeq\cr
 Type: \tab Package\cr
-Version: \tab 0.4\cr
-Date: \tab 2014-02-26\cr
+Version: \tab 1.0.2\cr
+Date: \tab 2015-01-26\cr
 License: \tab GPL \cr
 }
 }
@@ -24,7 +24,7 @@ Maintainer: Guillemette Marot <guillemette.marot@inria.fr>
 
 }
 \references{
-A. Rau, G. Marot and F. Jaffrezic (2013). Differential meta-analysis of RNA-seq data from multiple studies. arXiv:1306.3636
+A. Rau, G. Marot and F. Jaffrezic (2014). Differential meta-analysis of RNA-seq data. \emph{BMC Bioinformatics} \bold{15}:91
 }
 \keyword{ package }
 \seealso{
@@ -32,6 +32,8 @@ A. Rau, G. Marot and F. Jaffrezic (2013). Differential meta-analysis of RNA-seq 
 \code{\link{fishercomb}}
 }
 \examples{
-# See examples in User's Guide:
-vignette("metaRNASeq")
+#An User's guide with detailed examples can be downloaded in interactive R sessions
+if(interactive()){
+	vignette("metaRNASeq")
+	}
 }

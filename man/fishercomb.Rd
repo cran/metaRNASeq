@@ -39,7 +39,7 @@ to multiple testing. \emph{JRSS B} (57): 289-300.
 
 M. Brown (1975). A method for combining non-independent, one-sided tests of significance. \emph{Biometrics} \bold{31}(4): 987-992.
 
-A. Rau, G. Marot and F. Jaffrezic (2012). Differential meta-analysis of RNA-seq data. (Manuscript in progress)
+A. Rau, G. Marot and F. Jaffrezic (2014). Differential meta-analysis of RNA-seq data. \emph{BMC Bioinformatics} \bold{15}:91
 }
 \seealso{
 \code{\link{metaRNASeq}}

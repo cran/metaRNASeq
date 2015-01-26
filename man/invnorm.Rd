@@ -51,7 +51,7 @@ Hedges, L. and Olkin, I. (1985). Statistical Methods for Meta-Analysis. Academic
 Marot, G. and Mayer, C.-D. (2009). Sequential analysis for microarray data based on sensitivity and meta-analysis.
 \emph{SAGMB} 8(1): 1-33.
 
-A. Rau, G. Marot and F. Jaffrezic (2012). Differential meta-analysis of RNA-seq data. (Manuscript in progress)}
+A. Rau, G. Marot and F. Jaffrezic (2014). Differential meta-analysis of RNA-seq data. \emph{BMC Bioinformatics} \bold{15}:91}
 \note{
 This function resembles the function \code{directpvalcombi} in the \emph{metaMA} R package; there is, however, one 
 important difference in the calculation of \emph{p}-values. In particular, for microarray data, it is typically 

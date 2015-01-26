@@ -17,10 +17,10 @@ individual differential analyses (obtained using DESeq v1.8.3) of each of the si
 It is possible to reproduce these p-values using the procedure described in the package vignette.
 }
 \references{
-A. Rau, G. Marot and F. Jaffrezic (2012). Differential meta-analysis of RNA-seq data. (Manuscript in progress)
+A. Rau, G. Marot and F. Jaffrezic (2014). Differential meta-analysis of RNA-seq data. \emph{BMC Bioinformatics} \bold{15}:91
 }
 \examples{
 data(rawpval)
-## Maybe str(rawpval) ; plot(rawpval) ...
+## Maybe str(rawpval)
 }
 \keyword{datasets}

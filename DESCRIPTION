@@ -1,20 +1,21 @@
 Package: metaRNASeq
 Type: Package
 Title: Meta-analysis of RNA-seq data
-Version: 0.4
-Date: 2014-02-26
+Version: 1.0.2
+Date: 2015-01-26
 Author: Guillemette Marot, Florence Jaffrezic, Andrea Rau
 Maintainer: Guillemette Marot <guillemette.marot@inria.fr>
 Depends: R (>= 2.15.0)
-Suggests: HTSFilter (>= 0.1.1), DESeq (>= 1.8.3), DESeq2 (>= 1.0.17)
-Description: This package implements two p-value combination techniques (inverse normal and Fisher methods). It also provides a vignette explaining how to combine data from multiple RNA-seq experiments.
+Suggests: HTSFilter (>= 0.1.1), DESeq (>= 1.8.3), DESeq2 (>= 1.0.17),
+        VennDiagram (<= 1.6.7)
+Description: Implementation of two p-value combination techniques (inverse normal and Fisher methods). A vignette is provided to explain how to perform a meta-analysis from two independent RNA-seq experiments.
 License: GPL
 LazyLoad: yes
 biocViews: HighThroughputSequencing, RNAseq, DifferentialExpression
 Repository: CRAN
 Repository/R-Forge/Project: htsfilter
-Repository/R-Forge/Revision: 67
-Repository/R-Forge/DateTimeStamp: 2014-02-26 17:41:40
-Date/Publication: 2014-03-14 12:19:09
-Packaged: 2014-02-26 19:26:45 UTC; rforge
+Repository/R-Forge/Revision: 103
+Repository/R-Forge/DateTimeStamp: 2015-01-26 14:19:14
+Date/Publication: 2015-01-26 20:33:13
+Packaged: 2015-01-26 14:31:28 UTC; rforge
 NeedsCompilation: no

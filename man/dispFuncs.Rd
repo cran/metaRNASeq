@@ -37,7 +37,7 @@ These gamma-family GLMs describing the mean-dispersions relationship in each of 
 package to simulate data using dispersion parameters that are as realistic as possible.
 }
 \references{
-A. Rau, G. Marot and F. Jaffrezic (submitted, 2012). Differential meta-analysis of RNA-seq data.
+A. Rau, G. Marot and F. Jaffrezic (2014). Differential meta-analysis of RNA-seq data. \emph{BMC Bioinformatics} \bold{15}:91
 
 S. Anders and W. Huber (2010). Differential expression analysis for sequence count data. 
 \emph{Genome Biology}, 11:R106.

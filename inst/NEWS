@@ -19,3 +19,7 @@ Better compression of param.rda file
 
 Modifications in vignette (26 February 2014)
 
+    CHANGES in metaRNASeq VERSION 1.0.2 (26 January 2015)
+
+http bug corrected, updates in citations, vignette only opened in non interactive mode
+Additional functions to extract IDD, IDR and draw Venn diagrams

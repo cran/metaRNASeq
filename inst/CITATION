@@ -2,11 +2,13 @@ citHeader("To cite the R package 'metaRNASeq' in publications use:")
 
 citEntry(entry   = "Article",
          title   = "Differential meta-analysis of RNA-seq data",
-         year    = "2013",
-	 journal = "arXiv",
+         year    = "2014",
+	 journal = "{BMC} Bioinformatics",
          author  = personList(
-           person(first="Andrea", last="Rau"),
-           person(first="Guillemette", last="Marot"),
-           person(first="Florence", last="Jaffrezic")),
-         textVersion = "A. Rau, G. Marot and F. Jaffrezic (2013). Differential meta-analysis of RNA-seq data from multiple studies. arXiv:1306.3636")
+           person(given="Andrea", family="Rau"),
+           person(given="Guillemette", family="Marot"),
+           person(given="Florence", family="Jaffrezic")),
+  volume = "15",
+  pages= "91",
+         textVersion = "A. Rau, G. Marot and F. Jaffrezic (2014). Differential meta-analysis of RNA-seq data from multiple studies. BMC Bioinformatics, 15:91" )
 

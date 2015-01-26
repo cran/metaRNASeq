@@ -2,7 +2,7 @@
 %\VignetteKeyword{RNA-seq data}
 %\VignetteKeyword{differential analysis}
 %\VignettePackage{metaRNASeq}
-\documentclass[12pt,utf8x]{article}
+\documentclass[12pt]{article}
 
 \SweaveOpts{eps=FALSE,echo=TRUE,png=TRUE,pdf=FALSE,figs.only=TRUE}
 \usepackage{times}
@@ -30,19 +30,13 @@
 \headheight=0in
 \headsep=0in
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Potential things to add:
-%% IDD, IDR, Venn diagram?
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
 \begin{document}
 \SweaveOpts{concordance=TRUE}
 
 \title{metaRNASeq: Differential meta-analysis of \\ RNA-seq data
 }
 \author{Guillemette Marot, Florence Jaffr{\'e}zic, Andrea Rau}
-\date{Modified: February 26, 2013.   Compiled: \today}
+\date{Modified: January 23, 2015.   Compiled: \today}
 \maketitle
 
 <<echo=FALSE>>=
@@ -61,7 +55,7 @@ This vignette illustrates the use of the \Rpackage{metaRNASeq} package to combin
  
 High-throughput sequencing (HTS) data, such as RNA-sequencing (RNA-seq) data, are increasingly used to conduct differential analyses, in which gene-by-gene statistical tests are performed in order to identify genes whose expression levels show systematic covariation with a particular condition, such as a treatment or phenotype of interest. Due to their large cost, however, only few biological replicates are often considered in each experiment leading to a low detection power of differentially expressed genes. For this reason, analyzing data arising from several experiments studying the same question can be a useful way to increase detection power for the identification of differentially expressed genes.
 
-The \Rpackage{metaRNASeq} package implements two $p$-value combination techniques (inverse normal and Fisher methods); see \cite{Rau2013} for additional details. There are two fundamental assumptions behind the use of these $p$-value combination procedures: first, that $p$-values have been obtained the same way for each experiment (i.e., using the same model and test); and second, that they follow a uniform distribution under the null hypothesis. In this vignette, we illustrate these $p$-value combination techniques after obtaining $p$-values for differential expression in each individual experiment using the \Rpackage{DESeq2} Bioconductor package \cite{Anders2010}. Count data are simulated using the \Rfunction{sim.function} provided in the \Rpackage{metaRNASeq} package; see section \ref{sec:sim} for additional detail.  
+The \Rpackage{metaRNASeq} package implements two $p$-value combination techniques (inverse normal and Fisher methods); see \cite{Rau2014} for additional details. There are two fundamental assumptions behind the use of these $p$-value combination procedures: first, that $p$-values have been obtained the same way for each experiment (i.e., using the same model and test); and second, that they follow a uniform distribution under the null hypothesis. In this vignette, we illustrate these $p$-value combination techniques after obtaining $p$-values for differential expression in each individual experiment using the \Rpackage{DESeq2} Bioconductor package \cite{Anders2010}. Count data are simulated using the \Rfunction{sim.function} provided in the \Rpackage{metaRNASeq} package; see section \ref{sec:sim} for additional detail.  
  
 %--------------------------------------------------
 \section{Simulation study} \label{sec:sim}
@@ -80,10 +74,10 @@ data(dispFuncs)
 These simulation parameters include the following information:
 \begin{itemize}
 \item \Robject{param}: Matrix of dimension (26408 $\times$ 3) containing mean expression in each of two conditions (here, labeled ``condition 1" and ``condition 2") and a logical vector indicating the presence or absence of differential expression for each of 26,408 genes
-\item \Robject{dispFuncs}: List of length 2, where each list is a vector containing the two estimated coefficients ($\alpha_0$ and $\alpha_1$) for the gamma-family generalized linear model (GLM) fit by \Rpackage{DESeq} (version 1.8.3) describing the mean-dispersion relationship for each of the two real datasets considered in \cite{Rau2013}. These regressions represent the typical relationship between mean expression values $\mu$ and dispersions $\alpha$ in each dataset, where the coefficients $\alpha_0$ and $\alpha_1$ are found to parameterize the fit as $\alpha = \alpha_0 + \alpha_1 / \mu$.
+\item \Robject{dispFuncs}: List of length 2, where each list is a vector containing the two estimated coefficients ($\alpha_0$ and $\alpha_1$) for the gamma-family generalized linear model (GLM) fit by \Rpackage{DESeq} (version 1.8.3) describing the mean-dispersion relationship for each of the two real datasets considered in \cite{Rau2014}. These regressions represent the typical relationship between mean expression values $\mu$ and dispersions $\alpha$ in each dataset, where the coefficients $\alpha_0$ and $\alpha_1$ are found to parameterize the fit as $\alpha = \alpha_0 + \alpha_1 / \mu$.
 \end{itemize}
 
-These parameters were calculated on real data sets from two human melanoma cell lines \cite{Strub2011}, corresponding to two different studies performed for the same cell line comparison, with two biological replicates per cell line in the first and three per cell line in the second. These data are presented in greater detail in \cite{Strub2011} and \cite{Statomique2012}, and are freely available in the Supplementary Materials of the latter. 
+These parameters were calculated on real data sets from two human melanoma cell lines \cite{Strub2011}, corresponding to two different studies performed for the same cell line comparison, with two biological replicates per cell line in the first and three per cell line in the second. These data are presented in greater detail in \cite{Strub2011} and \cite{Statomique2013}, and are freely available in the Supplementary Materials of the latter. 
 
 Once parameters are loaded, we simulate data. We use the \Rfunction{set.seed} function to obtain reproducible results.
  
@@ -151,7 +145,7 @@ hist(rawpval[[1]], breaks=100, col="grey", main="Study 1", xlab="Raw p-values")
 hist(rawpval[[2]], breaks=100, col="grey", main="Study 2", xlab="Raw p-values")
 @
 
-\begin{figure}[h!]
+\begin{figure}[ht!]
 \begin{center}
 \includegraphics[width = .85\textwidth]{metaRNASeq-pvalDESeq2hist.png}
 \caption{Histograms of raw $p$-values for each of the individual differential analyses performed using the \Rpackage{DESeq2} package.\label{fig:pvalDESeq2hist}}
@@ -225,7 +219,7 @@ hist(rawpval[[2]], breaks=100, col="grey", main="Study 2",
   xlab="Raw p-values")
 @
 
-\begin{figure}[h!]
+\begin{figure}[ht!]
 \begin{center}
 \includegraphics[width = .85\textwidth]{metaRNASeq-pvalDEhist.png}
 \caption{Histograms of raw $p$-values for each of the individual differential analyses performed using the \Rpackage{HTSFilter} and \Rpackage{DESeq} packages.\label{fig:pvalDEhist}}
@@ -233,7 +227,7 @@ hist(rawpval[[2]], breaks=100, col="grey", main="Study 2",
 \end{figure}
 
 %--------------------------------------------------
-\section{Use of $p$-value combination techniques} \label{sec:pvalcombi}
+\section{Use of p-value combination techniques} \label{sec:pvalcombi}
 %--------------------------------------------------
 
 The code in this section may be used independently from the previous section if $p$-values from each study have been obtained using the same differential analysis test between the different studies. Vectors of $p$-values must have the same length; \Rcode{rawpval} is a list (or data.frame) containing the vectors of raw $p$-values obtained from the individual differential analyses of each study. 
@@ -275,7 +269,7 @@ head(DEresults)
 \section{Treatment of conflicts in differential expression} \label{sec:check}
 %--------------------------------------------------
 
-As pointed out in \cite{Rau2013}, it is not possible to directly avoid conflicts between over- and under- expressed genes in separate studies that appear in differential meta-analyses of RNA-seq data. We thus advise checking that individual studies identify differential expression in the same direction (i.e., if in one study, a gene is identified as differentially over-expressed in condition 1 as compared to condition 2, it should not be identified as under-expressed in condition 1 as compared to condition 2 in a second study). Genes displaying contradictory differential expression in separate studies should be removed from the list of genes identified as differentially expressed via meta-analysis. 
+As pointed out in \cite{Rau2014}, it is not possible to directly avoid conflicts between over- and under- expressed genes in separate studies that appear in differential meta-analyses of RNA-seq data. We thus advise checking that individual studies identify differential expression in the same direction (i.e., if in one study, a gene is identified as differentially over-expressed in condition 1 as compared to condition 2, it should not be identified as under-expressed in condition 1 as compared to condition 2 in a second study). Genes displaying contradictory differential expression in separate studies should be removed from the list of genes identified as differentially expressed via meta-analysis. 
 
 We build a matrix \Rcode{signsFC} gathering all signs of fold changes from individual studies.
 
@@ -299,13 +293,59 @@ dim(conflictDE)
 head(keepDE)
 @
 
-Note that out of all the conflicts, 147 represented genes were simulated to be truly differentially expressed. 
+<<filtercheckcache,eval=TRUE,echo=FALSE>>=
+nbtrueconflicts=as.vector(table(conflictDE$DE)[2])
+@
+
+Note that out of all the conflicts, \Sexpr{nbtrueconflicts} represented genes were simulated to be truly differentially expressed. 
 
 <<filtercheck>>=
 table(conflictDE$DE)
 @
 
-% faut il rajouter IDD, IDR, venn diagram?
+%--------------------------------------------------
+\section{IDD, IRR and Venn Diagram}
+%--------------------------------------------------
+
+Different indicators can be used to evaluate the performance of the meta-analysis, some of them are described in \cite{Marot2009} and returned by the function \Rcode{IDD.IRR}. DE corresponds to the number of differentially expressed genes. IDD (Integration Driven discoveries) returns the number of genes that are declared DE in the meta-analysis that were not identified in any of the individual studies alone, Loss the number of genes that are identified DE in individual studies but not in meta-analysis. The Integration-driven Discovery Rate (IDR) and Integration-driven Revision Rate (IRR) are the corresponding proportions of IDD and Loss. 
+
+<<calcul>>=
+fishcomb_de <- rownames(keepDE)[which(keepDE[,"DE.fishercomb"]==1)] 
+invnorm_de <- rownames(keepDE)[which(keepDE[,"DE.invnorm"]==1)] 
+indstudy_de <- list(rownames(keepDE)[which(keepDE[,"DE.study1"]==1)], 
+                    rownames(keepDE)[which(keepDE[,"DE.study2"]==1)])
+
+IDD.IRR(fishcomb_de,indstudy_de)
+IDD.IRR(invnorm_de ,indstudy_de)
+@
+<<calcul2,eval=TRUE,echo=FALSE>>=
+x=IDD.IRR(fishcomb_de,indstudy_de)
+y=IDD.IRR(invnorm_de ,indstudy_de)
+@
+
+In this example, the p-value combination technique with Fisher's method gives $\Sexpr{x[["IDD"]]}$ ($\Sexpr{x[["IDR"]]}\%$) new genes and $\Sexpr{x[["Loss"]]}$ ($\Sexpr{x[["IRR"]]}\%$), are sidetracked. The inverse normal combination technique gives $\Sexpr{y[["IDD"]]}$ ($\Sexpr{y[["IDR"]]}\%$) new genes and $\Sexpr{y[["Loss"]]}$ ($\Sexpr{y[["IRR"]]}\%$), are sidetracked \\
+
+To compare visually the number of differentially expressed genes in individual studies or in meta-analysis, it is also possible to draw a Venn diagram, for example with the \Rpackage{VennDiagram} package.
+
+<<venndiagram,results=hide,echo=TRUE,eval=TRUE>>=
+library(VennDiagram)
+venn.plot<-venn.diagram(x = list(study1=which(keepDE[,"DE.study1"]==1),
+                                 study2=which(keepDE[,"DE.study2"]==1),
+                                 fisher=which(keepDE[,"DE.fishercomb"]==1),
+                                 invnorm=which(keepDE[,"DE.invnorm"]==1)),
+                        filename = NULL, col = "black",
+                        fill = c("blue", "red", "purple","green"),
+                        margin=0.05, alpha = 0.6)
+jpeg("venn_jpeg.jpg");
+grid.draw(venn.plot);
+dev.off();
+@
+\begin{figure}[t!]
+\begin{center}
+\includegraphics[width = .85\textwidth]{venn_jpeg.jpg}
+\caption{Venn Diagram comparing the list of DE genes at a 5\% BH threshold obtained by each individual study and p-value combination techniques}
+\end{center}
+\end{figure}
 
 %--------------------------------------------------
 \section{Session Info}
