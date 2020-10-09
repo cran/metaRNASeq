@@ -65,7 +65,6 @@ To begin, we load the necessary packages and simulation parameters:
  
 <<loadparameters>>=  
 library(metaRNASeq)
-library(DESeq2)
 data(param)
 dim(param)
 data(dispFuncs)
@@ -116,12 +115,14 @@ simstudy2 <- extractfromsim(matsim,"study2")
 Differential analyses for each study are then easily performed using the \Rcode{DESeqDataSetFromMatrix} method.
 
 <<DESeq2.indivanalysis>>=
-dds1 <- DESeqDataSetFromMatrix(countData = simstudy1$study,
- colData = simstudy1$pheno,design = ~ condition)
-res1 <- results(DESeq(dds1))
-dds2 <- DESeqDataSetFromMatrix(countData = simstudy2$study, 
-  colData = simstudy2$pheno,design = ~ condition)
-res2 <- results(DESeq(dds2))
+ if (requireNamespace("DESeq2", quietly = TRUE)) {
+    dds1 <- DESeq2::DESeqDataSetFromMatrix(countData = simstudy1$study,
+      colData = simstudy1$pheno,design = ~ condition)
+    res1 <- DESeq2::results(DESeq2::DESeq(dds1))
+    dds2 <- DESeq2::DESeqDataSetFromMatrix(countData = simstudy2$study, 
+      colData = simstudy2$pheno,design = ~ condition)
+    res2 <- DESeq2::results(DESeq2::DESeq(dds2))
+  }
 @
 
 We recommand to store both p-value and Fold Change results in lists in order to perform meta-analysis and keep track of the potential conflicts (see section \ref{sec:check})
@@ -133,9 +134,12 @@ FC <- list("FC1"=res1[["log2FoldChange"]],"FC2"=res2[["log2FoldChange"]])
 Differentially expressed genes in each individual study can also be marked in a matrix \Rcode{DE}:
 <<storeadjpval>>=
 adjpval <- list("adjpval1"=res1[["padj"]],"adjpval2"=res2[["padj"]])
+studies <- c("study1", "study2")
 DE <- mapply(adjpval, FUN=function(x) ifelse(x <= 0.05, 1, 0))
-colnames(DE)=c("DEstudy1","DEstudy2")
+colnames(DE)=paste("DE",studies,sep=".")
 @
+
+\Rcode{DE} returns a matrix with 1 for genes identified as differentially expressed and 0 otherwise (one column per study)
 
 Since the proposed p-value combination techniques rely on the assumption that p-values follow a uniform distribution under the null hypothesis, it is necesary to check that the histograms of raw-pvalues reflect that assumption: 
 
@@ -152,64 +156,17 @@ hist(rawpval[[2]], breaks=100, col="grey", main="Study 2", xlab="Raw p-values")
 \end{center}
 \end{figure}
   
-The peak near 0 corresponds to differentially expressed genes, no other peak should appear. If another peak appears (for example like in this example where a peak is observed for p-values close to 1), then we suggest to use HTSFilter (see the following section).
+The peak near 0 corresponds to differentially expressed genes, no other peak should appear. Sometimes another peak may appear due to genes with very low values of expression which often lead to an enrichment of $p$-values close to 1 as they take on discrete values. As such genes are unlikely to display evidence for differential expression, it is recommended to perform an independent filtering. The application of such a filter typically removes those genes contributing to a peak of $p$-values close to 1, leading to a distribution of $p$-values under the null hypothesis more closely following a uniform distribution. As the proposed $p$-value combination techniques rely on this assumption, it is sometimes necessary to independently filter genes with very low read counts.
 
-\subsection{Using HTSFilter to validate the p-value uniform distribution assumption}
+In this example the \Rfunction{results} function of DESeq2 performs an automatic independent filtering. If a row is filtered by independent filtering, then only the adjusted $p$-value will be set to NA, and the graphic of raw $p$-values does not change. In order to have a distribution of raw $p$-values under the null hypothesis following a uniform distribution, we must manually set the corresponding raw $p$-values to NA.
 
-Genes with very low values of expression often lead to an enrichment of $p$-values close to 1 as they take on discrete values; as such genes are unlikely to display evidence for differential expression, it has been proposed to apply {\it independent filtering} to filter these genes \cite{HTSFilter}. In addition, the application of such a filter typically removes those genes contributing to a peak of $p$-values close to 1, leading to a distribution of $p$-values under the null hypothesis more closely following a uniform distribution. As the proposed $p$-value combination techniques rely on this assumption, it is sometimes necessary to independently filter genes with very low read counts. For this purpose, we recommand the use of the \Rpackage{HTSFilter} package, see \cite{HTSFilter} for more details; note that we apply the filter in \Rpackage{HTSFilter} to each study individually after estimating library sizes and per-gene dispersion parameters. 
-
-Once the data are filtered, we use the \Rpackage{DESeq} package to perform differential analyses of each of the two individual datasets. The following function \Rfunction{resDESeq1study} is a wrapper of the main functions of the data filter in \Rpackage{HTSFilter} and differential analysis in \Rpackage{DESeq}, selecting the appropriate columns in the simulated data set for each study. The following two steps could be replaced by direct uses of the \Rpackage{HTSFilter} and \Rpackage{DESeq} packages and concatenation of results in one list (see \Rcode{resDESeq.alt}).
-
-%change with DESeq2
-
-<<DESeq1study>>= 
-library(DESeq)
-library(HTSFilter)
-resDESeq1study <- function(studyname, alldata, cond1totest="cond1",
-    cond2totest="cond2", fitType = "parametric") {
-  study <- alldata[,grep(studyname,colnames(alldata))]
-  studyconds <- gsub(studyname,"",colnames(study))
-  colnames(study) <- paste(studyconds,1:dim(study)[2],sep=".")
-  cds <- newCountDataSet(study, studyconds)
-  cds <- estimateSizeFactors(cds)
-  cds <- estimateDispersions(cds, method="pooled", fitType=fitType)
-  ## Filter using Jaccard index for each study
-  filter <- HTSFilter(cds, plot=FALSE)
-  cds.filter <- filter$filteredData
-  on.index <- which(filter$on == 1)
-  cat("# genes passing filter", studyname, ":", dim(cds.filter)[1], "\n")
-  res <- as.data.frame(matrix(NA, nrow = nrow(cds), ncol=ncol(cds)))
-  nbT <- nbinomTest(cds.filter, cond1totest, cond2totest)
-  colnames(res) <- colnames(nbT)
-  res[on.index,] <- nbT
-  res
-}
+<<filteredPval>>=
+filtered <- lapply(adjpval, FUN=function(pval) which(is.na(pval)))
+rawpval[[1]][filtered[[1]]]=NA
+rawpval[[2]][filtered[[2]]]=NA
 @
 
-The wrapper can be applied simultaneously to the two studies with the use of the function \Rfunction{lapply}:
-
-<<DESeq2studies>>= 
-studies <- c("study1", "study2")
-resDESeq <- lapply(studies, 
-  FUN=function(x) resDESeq1study(x, alldata=matsim))
-@
-
-Note that \Rcode{resDESeq} can be created directly from two or more \Rpackage{DEseq} results called \Rcode{res.study1}, \Rcode{res.study2}, \dots :
-
-\begin{center}
-\Rcode{resDESeq.alt <- list(res.study1,res.study2)}
-\end{center}
-
-Since only $p$-values are necessary to perform meta-analysis, we keep them in lists called \Rcode{rawpval} for raw $p$-values and \Rcode{adjpval} for $p$-values adjusted to correct for multiple testing (e.g., to control the false discovery rate at 5\% using the Benjamini-Hochberg method).
- 
-<<pvalDE>>= 
-rawpval <- lapply(resDESeq, FUN=function(res) res$pval)
-adjpval <- lapply(resDESeq, FUN=function(res) res$padj)
-DE <- mapply(adjpval, FUN=function(x) ifelse(x <= 0.05, 1, 0))
-colnames(DE)=paste("DE",studies,sep=".")
-@
-
-\Rcode{DE} returns a matrix with 1 for genes identified as differentially expressed and 0 otherwise (one column per study). To confirm that the raw $p$-values under the null hypothesis are roughly uniformly distributed, we may also inspect histograms of the raw $p$-values from each of the individual differential analyses (see Figure~\ref{fig:pvalDEhist}):
+To confirm that the raw $p$-values under the null hypothesis are roughly uniformly distributed, we may also inspect histograms of the raw $p$-values from each of the individual differential analyses (see Figure~\ref{fig:pvalDEhist}):
 
 <<pvalDEhist, fig=TRUE, include=FALSE, width = 10, height = 6>>=
 par(mfrow = c(1,2))
@@ -222,7 +179,7 @@ hist(rawpval[[2]], breaks=100, col="grey", main="Study 2",
 \begin{figure}[ht!]
 \begin{center}
 \includegraphics[width = .85\textwidth]{metaRNASeq-pvalDEhist.png}
-\caption{Histograms of raw $p$-values for each of the individual differential analyses performed using the \Rpackage{HTSFilter} and \Rpackage{DESeq} packages.\label{fig:pvalDEhist}}
+\caption{Histograms of raw $p$-values for each of the individual differential analyses performed using the independent filtering from \Rpackage{DESeq2} package.\label{fig:pvalDEhist}}
 \end{center}
 \end{figure}
 
@@ -328,17 +285,18 @@ In this example, the p-value combination technique with Fisher's method gives $\
 To compare visually the number of differentially expressed genes in individual studies or in meta-analysis, it is also possible to draw a Venn diagram, for example with the \Rpackage{VennDiagram} package.
 
 <<venndiagram,results=hide,echo=TRUE,eval=TRUE>>=
-library(VennDiagram)
-venn.plot<-venn.diagram(x = list(study1=which(keepDE[,"DE.study1"]==1),
+ if (require("VennDiagram", quietly = TRUE)) {
+  venn.plot<-venn.diagram(x = list(study1=which(keepDE[,"DE.study1"]==1),
                                  study2=which(keepDE[,"DE.study2"]==1),
                                  fisher=which(keepDE[,"DE.fishercomb"]==1),
                                  invnorm=which(keepDE[,"DE.invnorm"]==1)),
                         filename = NULL, col = "black",
                         fill = c("blue", "red", "purple","green"),
                         margin=0.05, alpha = 0.6)
-jpeg("venn_jpeg.jpg");
-grid.draw(venn.plot);
-dev.off();
+  jpeg("venn_jpeg.jpg");
+  grid.draw(venn.plot);
+  dev.off();
+}
 @
 \begin{figure}[t!]
 \begin{center}

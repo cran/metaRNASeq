@@ -10,7 +10,6 @@ options(width=60)
 ### code chunk number 2: loadparameters
 ###################################################
 library(metaRNASeq)
-library(DESeq2)
 data(param)
 dim(param)
 data(dispFuncs)
@@ -39,12 +38,14 @@ simstudy2 <- extractfromsim(matsim,"study2")
 ###################################################
 ### code chunk number 5: DESeq2.indivanalysis
 ###################################################
-dds1 <- DESeqDataSetFromMatrix(countData = simstudy1$study,
- colData = simstudy1$pheno,design = ~ condition)
-res1 <- results(DESeq(dds1))
-dds2 <- DESeqDataSetFromMatrix(countData = simstudy2$study, 
-  colData = simstudy2$pheno,design = ~ condition)
-res2 <- results(DESeq(dds2))
+ if (requireNamespace("DESeq2", quietly = TRUE)) {
+    dds1 <- DESeq2::DESeqDataSetFromMatrix(countData = simstudy1$study,
+      colData = simstudy1$pheno,design = ~ condition)
+    res1 <- DESeq2::results(DESeq2::DESeq(dds1))
+    dds2 <- DESeq2::DESeqDataSetFromMatrix(countData = simstudy2$study, 
+      colData = simstudy2$pheno,design = ~ condition)
+    res2 <- DESeq2::results(DESeq2::DESeq(dds2))
+  }
 
 
 ###################################################
@@ -58,8 +59,9 @@ FC <- list("FC1"=res1[["log2FoldChange"]],"FC2"=res2[["log2FoldChange"]])
 ### code chunk number 7: storeadjpval
 ###################################################
 adjpval <- list("adjpval1"=res1[["padj"]],"adjpval2"=res2[["padj"]])
+studies <- c("study1", "study2")
 DE <- mapply(adjpval, FUN=function(x) ifelse(x <= 0.05, 1, 0))
-colnames(DE)=c("DEstudy1","DEstudy2")
+colnames(DE)=paste("DE",studies,sep=".")
 
 
 ###################################################
@@ -71,50 +73,15 @@ hist(rawpval[[2]], breaks=100, col="grey", main="Study 2", xlab="Raw p-values")
 
 
 ###################################################
-### code chunk number 9: DESeq1study
+### code chunk number 9: filteredPval
 ###################################################
-library(DESeq)
-library(HTSFilter)
-resDESeq1study <- function(studyname, alldata, cond1totest="cond1",
-    cond2totest="cond2", fitType = "parametric") {
-  study <- alldata[,grep(studyname,colnames(alldata))]
-  studyconds <- gsub(studyname,"",colnames(study))
-  colnames(study) <- paste(studyconds,1:dim(study)[2],sep=".")
-  cds <- newCountDataSet(study, studyconds)
-  cds <- estimateSizeFactors(cds)
-  cds <- estimateDispersions(cds, method="pooled", fitType=fitType)
-  ## Filter using Jaccard index for each study
-  filter <- HTSFilter(cds, plot=FALSE)
-  cds.filter <- filter$filteredData
-  on.index <- which(filter$on == 1)
-  cat("# genes passing filter", studyname, ":", dim(cds.filter)[1], "\n")
-  res <- as.data.frame(matrix(NA, nrow = nrow(cds), ncol=ncol(cds)))
-  nbT <- nbinomTest(cds.filter, cond1totest, cond2totest)
-  colnames(res) <- colnames(nbT)
-  res[on.index,] <- nbT
-  res
-}
+filtered <- lapply(adjpval, FUN=function(pval) which(is.na(pval)))
+rawpval[[1]][filtered[[1]]]=NA
+rawpval[[2]][filtered[[2]]]=NA
 
 
 ###################################################
-### code chunk number 10: DESeq2studies
-###################################################
-studies <- c("study1", "study2")
-resDESeq <- lapply(studies, 
-  FUN=function(x) resDESeq1study(x, alldata=matsim))
-
-
-###################################################
-### code chunk number 11: pvalDE
-###################################################
-rawpval <- lapply(resDESeq, FUN=function(res) res$pval)
-adjpval <- lapply(resDESeq, FUN=function(res) res$padj)
-DE <- mapply(adjpval, FUN=function(x) ifelse(x <= 0.05, 1, 0))
-colnames(DE)=paste("DE",studies,sep=".")
-
-
-###################################################
-### code chunk number 12: pvalDEhist
+### code chunk number 10: pvalDEhist
 ###################################################
 par(mfrow = c(1,2))
 hist(rawpval[[1]], breaks=100, col="grey", main="Study 1", 
@@ -124,7 +91,7 @@ hist(rawpval[[2]], breaks=100, col="grey", main="Study 2",
 
 
 ###################################################
-### code chunk number 13: pvalfishcomb
+### code chunk number 11: pvalfishcomb
 ###################################################
 fishcomb <- fishercomb(rawpval, BHth = 0.05)
 hist(fishcomb$rawpval, breaks=100, col="grey", main="Fisher method",
@@ -132,7 +99,7 @@ hist(fishcomb$rawpval, breaks=100, col="grey", main="Fisher method",
 
 
 ###################################################
-### code chunk number 14: pvalinvnorm
+### code chunk number 12: pvalinvnorm
 ###################################################
 invnormcomb <- invnorm(rawpval,nrep=c(8,8), BHth = 0.05)   
 hist(invnormcomb$rawpval, breaks=100, col="grey", 
@@ -141,7 +108,7 @@ hist(invnormcomb$rawpval, breaks=100, col="grey",
 
 
 ###################################################
-### code chunk number 15: tabDE
+### code chunk number 13: tabDE
 ###################################################
 DEresults <- data.frame(DE, 
   "DE.fishercomb"=ifelse(fishcomb$adjpval<=0.05,1,0),
@@ -150,7 +117,7 @@ head(DEresults)
 
 
 ###################################################
-### code chunk number 16: checkDESeq2
+### code chunk number 14: checkDESeq2
 ###################################################
 signsFC <- mapply(FC, FUN=function(x) sign(x))
 sumsigns <- apply(signsFC,1,sum) 
@@ -158,7 +125,7 @@ commonsgnFC <- ifelse(abs(sumsigns)==dim(signsFC)[2], sign(sumsigns),0)
 
 
 ###################################################
-### code chunk number 17: filterconflicts
+### code chunk number 15: filterconflicts
 ###################################################
 unionDE <- unique(c(fishcomb$DEindices,invnormcomb$DEindices))
 FC.selecDE <- data.frame(DEresults[unionDE,],do.call(cbind,FC)[unionDE,],
@@ -172,19 +139,19 @@ head(keepDE)
 
 
 ###################################################
-### code chunk number 18: filtercheckcache
+### code chunk number 16: filtercheckcache
 ###################################################
 nbtrueconflicts=as.vector(table(conflictDE$DE)[2])
 
 
 ###################################################
-### code chunk number 19: filtercheck
+### code chunk number 17: filtercheck
 ###################################################
 table(conflictDE$DE)
 
 
 ###################################################
-### code chunk number 20: calcul
+### code chunk number 18: calcul
 ###################################################
 fishcomb_de <- rownames(keepDE)[which(keepDE[,"DE.fishercomb"]==1)] 
 invnorm_de <- rownames(keepDE)[which(keepDE[,"DE.invnorm"]==1)] 
@@ -196,30 +163,31 @@ IDD.IRR(invnorm_de ,indstudy_de)
 
 
 ###################################################
-### code chunk number 21: calcul2
+### code chunk number 19: calcul2
 ###################################################
 x=IDD.IRR(fishcomb_de,indstudy_de)
 y=IDD.IRR(invnorm_de ,indstudy_de)
 
 
 ###################################################
-### code chunk number 22: venndiagram
+### code chunk number 20: venndiagram
 ###################################################
-library(VennDiagram)
-venn.plot<-venn.diagram(x = list(study1=which(keepDE[,"DE.study1"]==1),
+ if (require("VennDiagram", quietly = TRUE)) {
+  venn.plot<-venn.diagram(x = list(study1=which(keepDE[,"DE.study1"]==1),
                                  study2=which(keepDE[,"DE.study2"]==1),
                                  fisher=which(keepDE[,"DE.fishercomb"]==1),
                                  invnorm=which(keepDE[,"DE.invnorm"]==1)),
                         filename = NULL, col = "black",
                         fill = c("blue", "red", "purple","green"),
                         margin=0.05, alpha = 0.6)
-jpeg("venn_jpeg.jpg");
-grid.draw(venn.plot);
-dev.off();
+  jpeg("venn_jpeg.jpg");
+  grid.draw(venn.plot);
+  dev.off();
+}
 
 
 ###################################################
-### code chunk number 23: sessionInfo
+### code chunk number 21: sessionInfo
 ###################################################
 sessionInfo()
 
