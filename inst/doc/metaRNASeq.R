@@ -51,14 +51,26 @@ simstudy2 <- extractfromsim(matsim,"study2")
 ###################################################
 ### code chunk number 6: storepvalandFC
 ###################################################
-rawpval <- list("pval1"=res1[["pvalue"]],"pval2"=res2[["pvalue"]])
-FC <- list("FC1"=res1[["log2FoldChange"]],"FC2"=res2[["log2FoldChange"]]) 
+if (exists("res1") && exists("res2"))
+{
+  rawpval <- list("pval1"=res1[["pvalue"]],"pval2"=res2[["pvalue"]])
+  FC <- list("FC1"=res1[["log2FoldChange"]],"FC2"=res2[["log2FoldChange"]])
+} else {
+  data(rawpval)
+  data(FC)
+}
 
 
 ###################################################
 ### code chunk number 7: storeadjpval
 ###################################################
-adjpval <- list("adjpval1"=res1[["padj"]],"adjpval2"=res2[["padj"]])
+if (exists("res1") && exists("res2"))
+{
+  adjpval <- list("adjpval1"=res1[["padj"]],"adjpval2"=res2[["padj"]])
+} else {
+  data(adjpval)
+}
+
 studies <- c("study1", "study2")
 DE <- mapply(adjpval, FUN=function(x) ifelse(x <= 0.05, 1, 0))
 colnames(DE)=paste("DE",studies,sep=".")
@@ -183,7 +195,7 @@ y=IDD.IRR(invnorm_de ,indstudy_de)
   jpeg("venn_jpeg.jpg");
   grid.draw(venn.plot);
   dev.off();
-}
+ } 
 
 
 ###################################################

@@ -127,13 +127,25 @@ Differential analyses for each study are then easily performed using the \Rcode{
 
 We recommand to store both p-value and Fold Change results in lists in order to perform meta-analysis and keep track of the potential conflicts (see section \ref{sec:check})
 <<storepvalandFC>>=
-rawpval <- list("pval1"=res1[["pvalue"]],"pval2"=res2[["pvalue"]])
-FC <- list("FC1"=res1[["log2FoldChange"]],"FC2"=res2[["log2FoldChange"]]) 
+if (exists("res1") && exists("res2"))
+{
+  rawpval <- list("pval1"=res1[["pvalue"]],"pval2"=res2[["pvalue"]])
+  FC <- list("FC1"=res1[["log2FoldChange"]],"FC2"=res2[["log2FoldChange"]])
+} else {
+  data(rawpval)
+  data(FC)
+}
 @
 
 Differentially expressed genes in each individual study can also be marked in a matrix \Rcode{DE}:
 <<storeadjpval>>=
-adjpval <- list("adjpval1"=res1[["padj"]],"adjpval2"=res2[["padj"]])
+if (exists("res1") && exists("res2"))
+{
+  adjpval <- list("adjpval1"=res1[["padj"]],"adjpval2"=res2[["padj"]])
+} else {
+  data(adjpval)
+}
+
 studies <- c("study1", "study2")
 DE <- mapply(adjpval, FUN=function(x) ifelse(x <= 0.05, 1, 0))
 colnames(DE)=paste("DE",studies,sep=".")
@@ -296,7 +308,7 @@ To compare visually the number of differentially expressed genes in individual s
   jpeg("venn_jpeg.jpg");
   grid.draw(venn.plot);
   dev.off();
-}
+ } 
 @
 \begin{figure}[t!]
 \begin{center}
