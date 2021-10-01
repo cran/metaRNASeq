@@ -1,10 +1,10 @@
-fb0cd9d7546f12741051c7971f4f9586 *DESCRIPTION
+293317a87ccceed928f9775ee0624832 *DESCRIPTION
 6dcb2a9c5d78beb60b26055b9690a191 *NAMESPACE
 947c9def5ed33503179d1b95993693a7 *R/IDD.IRR.R
 9389e18d7dde33a113ff3b439e3e6017 *R/fishercomb.R
-9fce976be87f52bdb044c58407f8d17e *R/invnorm.R
+e84ff42107b2a3bc963a7039f9be754f *R/invnorm.R
 6d897c30e178b34b3ad7d27e1d25967f *R/sim.function.R
-88e1f238a3da1243c9ec48bfea24128e *build/vignette.rds
+d64685dbfb7a48b9dd766e0357ac5fae *build/vignette.rds
 c6811ef3c7169b633a0756dc5f4157fd *data/FC.rda
 d15bdff0219298b9ea0b54f57646072d *data/adjpval.rda
 6cc0ca7ebd58fff22a0ba31e058e5488 *data/dispFuncs.rda
@@ -14,7 +14,7 @@ feb8d0375162dc530d94de8a726773c3 *inst/CITATION
 e02f23e27e32f43a50a8ffd8a0785f41 *inst/NEWS
 68db43ec6ad4c41a8242384e3c2ec268 *inst/doc/metaRNASeq.R
 f61f8c62cc48d67e0203a0beafd7fcd0 *inst/doc/metaRNASeq.Rnw
-ebad9349ed91c8544bf4eb4f5627ba2a *inst/doc/metaRNASeq.pdf
+c83459beddb2392c1ff68478e9c4152b *inst/doc/metaRNASeq.pdf
 44867e7ae48f2afd8e2b595c7bce164c *man/IDD.IRR.Rd
 c370627ab58628c08a8f8e5f3ae799a6 *man/adjpval.Rd
 86064d65bfd989d3baae2647814da1d3 *man/dispFuncs.Rd
@@ -27,4 +27,3 @@ fda0fb9aa0dad0e13ab091f4c80672df *man/fishercomb.Rd
 e864a57f4b396609531186239763f904 *man/sim.function.Rd
 f61f8c62cc48d67e0203a0beafd7fcd0 *vignettes/metaRNASeq.Rnw
 59f2e7f68fd50745f4c3bd6044fcab0e *vignettes/metaRNASeq.bib
-2158b37b89de3f7658e5250588dac03c *vignettes/venn_jpeg.jpg
