@@ -1,10 +1,10 @@
 citHeader("To cite the R package 'metaRNASeq' in publications use:")  
 
-citEntry(entry   = "Article",
+bibentry(bibtype   = "Article",
          title   = "Differential meta-analysis of RNA-seq data",
          year    = "2014",
 	 journal = "{BMC} Bioinformatics",
-         author  = personList(
+         author  = c(
            person(given="Andrea", family="Rau"),
            person(given="Guillemette", family="Marot"),
            person(given="Florence", family="Jaffrezic")),

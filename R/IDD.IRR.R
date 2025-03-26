@@ -1,6 +1,6 @@
 IDD.IRR<-function(meta_de,ind_de)
 {
-  if(class(ind_de)!="list")
+  if(!is.list(ind_de))
   {stop("ind_de should be a list")}
   deindst=Reduce(union,ind_de)
   DE=length(meta_de)
